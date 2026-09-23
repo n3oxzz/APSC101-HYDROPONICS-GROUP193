@@ -33,7 +33,7 @@ AF_DCMotor motor(1);
 
 void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps -- **Ensure Serial Monitor also has baud rate set to 9600**
-  pinMode(A0, INPUT_PULLUP);    // Define pin A0 for the button: note the use of INPUT_PULLUP. More information here: https://docs.arduino.cc/tutorials/generic/digital-input-pullup/
+  pinMode(A5, INPUT_PULLUP);    // Define pin A5 for the button: note the use of INPUT_PULLUP. More information here: https://docs.arduino.cc/tutorials/generic/digital-input-pullup/
   
   motor.setSpeed(190);          // Set the motor speed here. The motor speed is a 8 bit number 0-255. Where 0 = 0% speed and 255 = 100% speed.
                                 // If you want a specific speed, for eg. 75% speed, then: (0.75 * 255) = 190. 
