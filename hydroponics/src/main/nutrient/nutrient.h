@@ -2,7 +2,6 @@
 #define NUTRIENT_H
 
 #include <Arduino.h>
-#include <gravityTDS.h>
 
 // Calculates the mass of Nutrients in [g] needed to meet target.
 double calculateRequiredNutrients (double currentTDS /*[ppm]*/); 
