@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include "hydroponics.h"
+#include "hardware.h"
 
 void setup()
 {

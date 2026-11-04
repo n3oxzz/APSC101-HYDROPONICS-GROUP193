@@ -1,19 +1,38 @@
 #include "sensing.h"
+#include "hardware.h"
 
-// Measures the tds within the main tank.
-bool measureTDS () {}
+// Returns the tds of the main water tank.
+double getCurrentTDS()
+{
+  return 0.0;
+}
 
-// Measures the pd within the main tank.
-bool measurePH () {}
-
-// Returns the last tds measurement of the main tank.
-double getCurrentTDS () {}
-
-// Returns the last ph measurement of the main tank.
-double getCurrentPH () {}
+// Returns the ph of the main water tank.
+double getCurrentPH()
+{
+  return 0.0;
+}
 
 // Checks if the main tank water level is low.
-bool isMainWaterLow () {}
+bool isMainWaterLow()
+{
+  return false;
+}
 
 // Checks if the plant tank water level is low.
-bool isPlantWaterLow () {}
+bool isPlantWaterLow()
+{
+  return false;
+}
+
+// Initializes the sensing subsystem (start).
+void initSensing()
+{
+  return;
+}
+
+// Updates the sensing subsystem (loop).
+void updateSensing()
+{
+  return;
+}
