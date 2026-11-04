@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include "config.h"
+#include "hardware.h"
 
 void setup()
 {
