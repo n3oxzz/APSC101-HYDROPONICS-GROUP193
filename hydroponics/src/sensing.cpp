@@ -1,6 +1,7 @@
 #include "sensing.h"
-#include "../../../hardware.h"
-#include "../../../../libraries/GravityTDS.h"
+
+#include "hardware.h"
+#include "../../libraries/GravityTDS.h"
 
 static GravityTDS tds;
 

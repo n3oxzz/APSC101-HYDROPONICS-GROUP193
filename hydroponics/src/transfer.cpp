@@ -1,5 +1,6 @@
 #include "transfer.h"
-#include "../../../hardware.h"
+
+#include "hardware.h"
 
 // Starts transfering solution from the excess to the main tank.
 bool startMainTransfer()

@@ -1,5 +1,6 @@
 #include "mixing.h"
-#include "../../../hardware.h"
+
+#include "hardware.h"
 
 #include <AFMotor.h>
 
