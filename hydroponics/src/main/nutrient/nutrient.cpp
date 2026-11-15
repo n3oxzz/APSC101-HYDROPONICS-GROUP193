@@ -1,5 +1,5 @@
 #include "nutrient.h"
-#include "hardware.h"
+#include "../../../hardware.h"
 #include <Arduino.h>
 #include <Servo.h>
 #include <math.h>

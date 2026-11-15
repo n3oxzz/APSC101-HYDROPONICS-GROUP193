@@ -1,5 +1,5 @@
 #include "mixing.h"
-#include "hardware.h"
+#include "../../../hardware.h"
 
 // Runs the mixer at a given speed for a set time.
 bool runMixer(double speed, int time)

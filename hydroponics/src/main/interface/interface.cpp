@@ -1,5 +1,5 @@
 #include "interface.h"
-#include "hardware.h"
+#include "../../../hardware.h"
 
 // Initializes the interface subsystem (start).
 void initInterface() 

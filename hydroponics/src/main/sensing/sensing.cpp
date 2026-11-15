@@ -1,5 +1,5 @@
 #include "sensing.h"
-#include "hardware.h"
+#include "../../../hardware.h"
 
 // Returns the tds of the main water tank.
 double getCurrentTDS()
