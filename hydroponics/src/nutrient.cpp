@@ -1,10 +1,10 @@
 #include "nutrient.h"
-
 #include "hardware.h"
+
+#include <math.h>
 
 #include <Arduino.h>
 #include <Servo.h>
-#include <math.h>
 
 // Make the variables and function inside the braces priavte to the file 
 namespace { 

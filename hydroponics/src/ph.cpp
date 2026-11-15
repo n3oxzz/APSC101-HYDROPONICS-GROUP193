@@ -1,5 +1,4 @@
 #include "ph.h"
-
 #include "hardware.h"
 
 // Calculates the volume of ph solution in [ml] needed to meet target.
