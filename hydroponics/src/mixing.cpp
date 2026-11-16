@@ -54,7 +54,8 @@ void updateMixing()
     mixingMotor.setspeed(currentSpeed);
     mixingMotor.run(RELEASE);
   
-  return;
+    return;
+  }
 }
 
 // Stops the mixing subsystem (emergency stop).
