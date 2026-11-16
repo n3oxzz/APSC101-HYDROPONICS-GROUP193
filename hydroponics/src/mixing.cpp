@@ -16,7 +16,7 @@ bool runMixer(int speed, int time)
   startTime = millis();
   stopTime = millis() + time;
 
-  currentSpeed = 0;
+  currentSpeed = speed;
   
   return true;
 }
@@ -53,10 +53,16 @@ void updateMixing()
   }
 }
 
+void startIdleSpeed(int speed) {
+  currentSpeed = speed;
+  stopTime = millis() + 10 * 1000 * 60 // idle run for 10 min or until a new time is set
+}
+
 // Stops the mixing subsystem (emergency stop).
 void stopMixing()
 {
   currentSpeed = 0;
+  stopTime = millis();
   mixingMotor.setspeed(currentSpeed);
   mixingMotor.run(RELEASE);
 }
