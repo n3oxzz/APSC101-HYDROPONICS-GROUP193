@@ -45,9 +45,11 @@ void loop()
           double amount = calculateRequiredNutrients(tds);
         
           bool success = dispenseNutrients(amount);
+
+          runMixer(250*0.75, )
         }
-        else {
-          state = State::CONTROL_PH;
+        else if (!isMixingActive()) {
+            state = State::CONTROL_PH;
         }
       }
     }
