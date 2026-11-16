@@ -6,56 +6,49 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-// Make the variables and function inside the braces priavte to the file 
-namespace { 
-
-// constexpr means these settings are fixed while the sketch runs.
-// Connect the servo signal wire to .
-constexpr uint8_t servoPin = ;  
 // Pocket lines up under the funnel.
-constexpr int fillAngle = 0;   
+static int fillAngle = 0;   
  // Pocket lines up with the bottom discharge hole.
-constexpr int dumpAngle = 180; 
+static int dumpAngle = 180; 
 
 // These timers start when we send the position command, so they include travel.
 // 1000 milliseconds (ms) = 1 second.
 // Give the rotor time to reach fill when the system starts.
-constexpr unsigned long startupMs = 1000;
+static unsigned long startupMs = 1000;
 // Time to move to fill and collect powder.
-constexpr unsigned long fillMs = 3000;  
+static unsigned long fillMs = 3000;  
 // Time to turn and let the powder fall.
-constexpr unsigned long dumpMs = 2000;  
+static unsigned long dumpMs = 2000;  
 // Time to turn back before reporting idle.
-constexpr unsigned long returnMs = 1000; 
+static unsigned long returnMs = 1000; 
 
 
 // Readings from 900 to 1150 ppm, including both endpoints, are in range.
-constexpr double minTdsPpm = 900.0;
-constexpr double maxTdsPpm = 1150.0;
+static double minTdsPpm = 900.0;
+static double maxTdsPpm = 1150.0;
 
 // A zero dose mass blocks dispensing.
 // Actual water volume in litres.
-constexpr double tankVolumeL = 0.0;
+static double tankVolumeL = 0.0;
 // From measured TDS rise * litres / grams.
-constexpr double tdsSlopePpmLPerGram = 0.0;
+static double tdsSlopePpmLPerGram = 0.0;
 // Weigh the powder delivered by one cycle.
-constexpr double gramsPerPocket = 0.0;
+static double gramsPerPocket = 0.0;
 
 // Each name represents one step. Idle means ready and Stopped means locked out.
-enum class Phase { Stopped, MovingToFill, Idle, Filling, Dumping, Returning };
+static enum class Phase { Stopped, MovingToFill, Idle, Filling, Dumping, Returning };
 // This object sends position commands to the physical servo.
-Servo servo;
-Phase phase = Phase::Stopped;
+static Servo servo;
+static Phase phase = Phase::Stopped;
 // Time on the Arduino clock when a step began.
-unsigned long phaseStarted = 0;
+static unsigned long phaseStarted = 0;
 
-void enterPhase(Phase next)
+static void enterPhase(Phase next)
 {
   // Remember which step we are now doing.
   phase = next;
   // Record the current clock reading for that step.
   phaseStarted = millis();
-}
 }
 
 // Calculates the mass of nutrients in [g] needed to meet target.
@@ -110,7 +103,7 @@ void initNutrient()
   // Clear any previous cycle and set the first servo position.
   stopNutrient();
   servo.write(fillAngle);
-  servo.attach(servoPin);
+  servo.attach(NUTRIENT_SERVO_PIN);
 
   // Start the timer once the servo can receive position commands.
   if (servo.attached()) {

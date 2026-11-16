@@ -8,7 +8,7 @@ static int currentSpeed = 0;
 static int startTime = 0;
 static int stopTime = 0;
 
-static AF_DCMotor mixingMotor(MIXING_MOTOR_PORT); 
+static AF_DCMotor mixingMotor(MIXING_MOTOR_PIN); 
 
 // Runs the mixer at a given speed for a set time.
 bool runMixer(int speed, int time)

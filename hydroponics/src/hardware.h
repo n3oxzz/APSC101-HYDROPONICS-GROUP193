@@ -4,26 +4,26 @@
 #include <Arduino.h>
 
 // Defines hardware constants for the interface subsystem
-#define INTERFACE_SCREEN_PORT 0x3C
-#define INTERFACE_STOP_PORT A4
-#define INTERFACE_START_PORT A5
+#define SCREEN_PIN 0x3C
+#define STOP_BUTTON_PIN A4
+#define START_BUTTON_PIN A5
 
 // Defines hardware constants for the sensing subsystem
-#define SENSING_TDS_PORT A2
-#define SENSING_PH_PORT A3
-#define SENSING_LEVEL_PORT 30
+#define TDS_SENSOR_PIN A2
+#define PH_SENSOR_PIN A3
+#define LIQUID_SENSOR_PIN 30
 
 // Defines hardware constants for the ph subsystem
-#define PH_PUMP_PORT 3
+#define PH_PUMP_PIN 3
 
 // Defines hardware constants for the nutrient subsystem
-#define NUTRIENT_SERVO_PORT 9
+#define NUTRIENT_SERVO_PIN 9
 
 // Defines hardware constants for the mixing subsystem
-#define MIXING_MOTOR_PORT 4
+#define MIXING_MOTOR_PIN 4
 
 // Defines hardware constants for the transfer subsystem
-#define TRANSFER_PLANT_PUMP_PORT 1
-#define TRANSFER_WASTE_PUMP_PORT 2
+#define PLANT_PUMP_PIN 1
+#define WASTE_PUMP_PIN 2
 
 #endif
