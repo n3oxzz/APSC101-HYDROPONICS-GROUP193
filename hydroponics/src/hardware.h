@@ -23,7 +23,7 @@
 #define MIXING_MOTOR_PIN 4
 
 // Defines hardware constants for the transfer subsystem
+#define MAIN_PUMP_PIN 2
 #define PLANT_PUMP_PIN 1
-#define WASTE_PUMP_PIN 2
 
 #endif

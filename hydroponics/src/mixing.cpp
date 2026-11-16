@@ -22,10 +22,7 @@ bool runMixer(int speed, int time)
 }
 
 // Initializes the mixing subsystem (start).
-void initMixing()
-{
-  return;
-}
+void initMixing() { }
 
 // Updates the mixing subsystem (loop).
 void updateMixing()
@@ -53,8 +50,6 @@ void updateMixing()
     currentSpeed = 0;
     mixingMotor.setspeed(currentSpeed);
     mixingMotor.run(RELEASE);
-  
-    return;
   }
 }
 
@@ -64,7 +59,6 @@ void stopMixing()
   currentSpeed = 0;
   mixingMotor.setspeed(currentSpeed);
   mixingMotor.run(RELEASE);
-  return;
 }
 
 // Checks if the mixing subsystem is active.

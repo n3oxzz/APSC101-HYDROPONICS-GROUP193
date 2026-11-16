@@ -21,4 +21,7 @@ void initSensing();
 // Updates the sensing subsystem (loop).
 void updateSensing();
 
+// Stops the sensing subsystem (emergency stop).
+void stopSensing();
+
 #endif
