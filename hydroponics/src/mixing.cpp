@@ -55,6 +55,7 @@ void updateMixing()
 
 void startIdleSpeed(int speed) {
   currentSpeed = speed;
+  startTime = millis() - 301;
   stopTime = millis() + 10 * 1000 * 60 // idle run for 10 min or until a new time is set
 }
 
