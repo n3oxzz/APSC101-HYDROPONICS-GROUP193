@@ -105,6 +105,7 @@ void update();
 #define NUTRIENT_IDLE_TIME 6000
 
 #define NUTRIENT_POCKET 0
+#define NUTRIENT_SLOPE 0
 
 namespace Nutrients {
 
@@ -330,7 +331,7 @@ void Mixer::update () {
 ////////////////////////////////////////////////////////////////////////////////
 
 int Nutrients::calculate (double tds) {
-  return /*TDS TABLE SLOPE*/0.0 * (TARGET_TDS - tds) / NUTRIENT_POCKET;
+  return (int)(NUTRIENT_SLOPE * (TDS_TARGET - tds) / NUTRIENT_POCKET);
 }
 
 void Nutrients::dispense (int amount) {
@@ -354,6 +355,7 @@ void Nutrients::update () {
   
   if (millis() > startTime + NUTRIENT_IDLE_TIME) {
     required -= 1;
+    startTime = millis();
     flag = false;
     return;
   }
