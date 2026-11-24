@@ -224,7 +224,7 @@ void stopSubsystems () {
 }
 
 bool isAnythingActive () {
-  return Mixer::isActive || Nutrients::isActive || Ph::isActive || Transfer::isPlantActive || Transfer::isWasteActive;
+  return Mixer::isActive() || Nutrients::isActive() || Ph::isActive() || Transfer::isPlantActive() || Transfer::isWasteActive();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -235,28 +235,30 @@ void loop () {
   updateSubsystems(); 
   
   if (!Interface::STOP) {
-    double tds = Sensors::getCurrentTDS;
-    double ph = Sensors::getCurrentPH;
+    double tds = Sensors::getCurrentTDS();
+    double ph = Sensors::getCurrentPH();
     
-    if (Sensors::isMainTankLow && !isAnythingActive()) { Transfer::runWaste(); }
+    if (Sensors::isMainWaterLow() && !isAnythingActive()) { Transfer::runWaste(); }
     
     if (tds < TDS_TARGET && !isAnythingActive()) {
       int amount = Nutrients::calculate(tds); 
       
-      if (amount > 0) { Nutrients::dispense(amount); }
-      
-      Mixer::run(MIXING_FAST, (unsigned long)(amount * NUTRIENT_IDLE_TIME + 1000));
+      if (amount > 0) { 
+        Nutrients::dispense(amount); 
+        Mixer::run(MIXING_FAST, (unsigned long)(amount * NUTRIENT_IDLE_TIME + 1000));
+      }
     }
     
     if (ph < PH_TARGET && !isAnythingActive()) {
       double amount = Ph::calculate(ph);
       
-      if (amount > 0) { Ph::dispense(amount); }
-      
-      Mixer::run(MIXING_FAST, (unsigned long)(1000 * amount / PH_FLOW_RATE + 1000));
+      if (amount > 0) { 
+        Ph::dispense(amount); 
+        Mixer::run(MIXING_FAST, (unsigned long)(1000 * amount / PH_FLOW_RATE + 1000));
+      }
     }
 
-    if (Sensors::isPlantTankLow && !isAnythingActive()) { Transfer::runPlant(); }
+    if (Sensors::isPlantWaterLow() && !isAnythingActive()) { Transfer::runPlant(); }
   }
 }
 
