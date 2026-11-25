@@ -13,6 +13,8 @@
 #define STOP_BUTTON_PIN 51
 #define PAGE_BUTTON_PIN 50
 
+#define INTERFACE_PAGES 4
+
 namespace Interface {
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -29,7 +31,7 @@ void toggleStop();
 void togglePage();
 
 void init();
-void update(double tds, double ph, bool ll);
+void update();
 void stop();
 
 // 'images', 128x64px
@@ -244,8 +246,6 @@ const unsigned char epd_bitmap_Aphra [] PROGMEM = {
 
 #define TDS_TARGET 1000
 
-#define TDS_NOTHING 100
-
 #define TDS_POWER_PIN 45
 
 #define PH_SENSOR_PIN A3
@@ -259,14 +259,22 @@ const unsigned char epd_bitmap_Aphra [] PROGMEM = {
 
 #define LL_DETECTED LOW
 
+#define SENSOR_DELAY 500
+
 namespace Sensors {
 
 GravityTDS gravityTDS;
 
+double tds = TDS_TARGET;
+double ph = PH_TARGET;
+bool ll = false;
+
+bool flipFlop = true;
+unsigned long timer = 0;
+
 double getCurrentTDS();
 double getCurrentPH();
 
-bool isMainWaterLow();
 bool isPlantWaterLow();
 
 void init();
@@ -279,21 +287,15 @@ void stop();
 
 #define MIXING_MOTOR_PORT 4
 
-#define MIXING_FAST 105
-#define MIXING_SLOW 105
-
-#define MIXING_IDLE 0
+#define MIXING_SPED 105
 
 namespace Mixer {
 
 AF_DCMotor motor(MIXING_MOTOR_PORT);
 
-unsigned long startTime = 0;
-unsigned long stopTime = 0;
+bool active = false;
 
-int currentSpeed = 0;
-
-void run(int speed, unsigned long time);
+void run();
 
 bool isActive();
 
@@ -307,15 +309,9 @@ void stop();
 
 #define NUTRIENT_SERVO_PIN 9
 
-#define NUTRIENT_FILL_ANGLE 0
-#define NUTRIENT_DROP_ANGLE 180
-
 #define NUTRIENT_FILL_TIME 2000
 #define NUTRIENT_DROP_TIME 4000
 #define NUTRIENT_IDLE_TIME 6000
-
-#define NUTRIENT_POCKET 0.35
-#define NUTRIENT_SLOPE 1004.0
 
 namespace Nutrients {
 
@@ -323,13 +319,11 @@ bool flag = false;
 
 Servo servo;
 
+bool active = false;
+
 unsigned long startTime = 0;
 
-int required = 0;
-
-int calculate(double tds);
-
-void dispense(int amount);
+void dispense();
 
 bool isActive();
 
@@ -343,20 +337,15 @@ void stop();
 
 #define PH_PUMP_PORT 3
 
-#define PH_FLOW_RATE (70.0/60.0)
-
-#define PH_SLOPE_6 0.0463
-
 namespace Ph {
 
 AF_DCMotor pump(PH_PUMP_PORT);
 
+bool active = false;
+
 unsigned long startTime = 0;
-unsigned long stopTime = 0;
 
-double calculate(double ph);
-
-void dispense(double amount);
+void dispense();
 
 bool isActive();
 
@@ -376,8 +365,9 @@ namespace Transfer {
 AF_DCMotor plantPump(PLANT_PUMP_PORT);
 AF_DCMotor wastePump(WASTE_PUMP_PORT);
 
-unsigned long wasteExtraTime = 0.0;
-bool wasteFlag = true;
+unsigned long startTime = 0;
+unsigned long stopTime = 0;
+unsigned long wasteTimer = 0;
 
 bool plantActive = false;
 bool wasteActive = false;
@@ -396,68 +386,20 @@ void stop();
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define goofyDelay 500
-
-namespace goofy {
-
-int goofyFlipFlop = 1;
-
-unsigned long goofyTime = 0.0;
-
-double goofyTDS = TDS_TARGET;
-double goofyPH = PH_TARGET;
-
-void updateGoofySensorValues () {
-  if ((millis() - goofyTime) > goofyDelay || !goofyTime) {
-      if (goofyFlipFlop) { 
-        goofyTDS = Sensors::getCurrentTDS();
-        digitalWrite(TDS_POWER_PIN, LOW);
-      }
-      else {
-        goofyPH = Sensors::getCurrentPH();
-        digitalWrite(TDS_POWER_PIN, HIGH);
-      }
-      
-      goofyFlipFlop = !goofyFlipFlop;
-      goofyTime = millis();
-  }
-}
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 void initSubsystems () {
-  Interface::init(); 
-  Sensors::init(); 
-  Mixer::init(); 
-  Nutrients::init(); 
-  Ph::init(); 
-  Transfer::init();
+  Interface::init(); Sensors::init(); Mixer::init(); Nutrients::init(); Ph::init(); Transfer::init();
 }
 
 void updateSubsystems () {
-  Interface::update(
-    goofy::goofyTDS, goofy::goofyPH, Sensors::isPlantWaterLow()
-  );
-  
-  Sensors::update(); 
+  Interface::update(); Sensors::update(); 
   
   if (!Interface::STOP) {
-    Mixer::update(); 
-    Nutrients::update(); 
-    Ph::update(); 
-    Transfer::update();
+    Mixer::update(); Nutrients::update(); Ph::update(); Transfer::update();
   }
 }
 
 void stopSubsystems () {
-  Interface::stop();
-  Sensors::stop(); 
-  Mixer::stop(); 
-  Nutrients::stop(); 
-  Ph::stop(); 
-  Transfer::stop();
+  Interface::stop(); Sensors::stop(); Mixer::stop(); Nutrients::stop(); Ph::stop(); Transfer::stop();
 }
 
 bool isAnythingActive () {
@@ -469,59 +411,42 @@ bool isAnythingActive () {
 void setup () { initSubsystems(); }
 
 void loop () {
-  goofy::updateGoofySensorValues();
   updateSubsystems(); 
   
   if (!Interface::STOP) {
-    double tds = goofy::goofyTDS;
-    double ph = goofy::goofyPH;
-    
-    if (Sensors::isMainWaterLow() && !isAnythingActive()) { Transfer::runWaste(); }
-    
-    
-    if (tds < TDS_TARGET && !isAnythingActive() && !Sensors::isMainWaterLow()) {
-      int amount = Nutrients::calculate(tds); 
-      
-      if (amount > 0) { 
-        Nutrients::dispense(amount); 
-        Mixer::run(MIXING_FAST, (unsigned long)(amount * NUTRIENT_IDLE_TIME + 1000));
-      }
+    double tds = Sensors::tds;
+    double ph = Sensors::ph;
+  
+    if ((Transfer::stopTime - Transfer::startTime) > 0 && !isAnythingActive()) {
+      Transfer::runWaste();
+    }
+  
+    if (tds < TDS_TARGET && !isAnythingActive()) {
+      Nutrients::dispense(); 
+      Mixer::run();
     }
     
     if (tds > TDS_TARGET && Nutrients::isActive()) { Nutrients::stop(); Mixer::stop(); }
-    /*
-    if (ph < PH_TARGET && !isAnythingActive() && !Sensors::isMainWaterLow()) {
-      double amount = Ph::calculate(ph);
-      
-      if (amount > 0) { 
-        Ph::dispense(amount); 
-        Mixer::run(MIXING_FAST, (unsigned long)(1000 * amount / PH_FLOW_RATE + 1000));
-      }
+    
+    if (ph < PH_TARGET && !isAnythingActive()) {
+      Ph::dispense(); 
+      Mixer::run();
     }
     
     if (ph > PH_TARGET && Ph::isActive()) { Ph::stop(); Mixer::stop(); }
-*/
+
     if (Sensors::isPlantWaterLow() && !isAnythingActive()) { Transfer::runPlant(); }
-    
-    if (Sensors::isMainWaterLow() && Transfer::isPlantActive()) { Transfer::stop(); }
-    
-    /*
-    if (!isAnythingActive()) {
-      Mixer::run(MIXING_FAST, (unsigned long)(5000));
-    }
-    */
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Interface::togglePage () {
-  PAGE =  (PAGE + 1) % 4;
+  PAGE =  (PAGE + 1) % INTERFACE_PAGES;
 }
 
 void Interface::toggleStop () {
-  if (STOP == 1) {
-    //initSubsystems();
+  if (STOP == 1) { 
     STOP = 0;
   }
   else {
@@ -537,7 +462,7 @@ void Interface::init () {
   pinMode(PAGE_BUTTON_PIN, INPUT_PULLUP);
 }
 
-void Interface::update (double tds, double ph, bool ll) {
+void Interface::update () {
   if (digitalRead(STOP_BUTTON_PIN) == LOW && stopToggle == HIGH) {
     if (millis() > timer + PRESS_TIME) {
       toggleStop();
@@ -562,11 +487,9 @@ void Interface::update (double tds, double ph, bool ll) {
   display.setCursor(0, 0);
   
   if (PAGE == 0) {
-    display.println(F("====== APSC 101 ====="));
-    display.print(F("TDS: ")); display.println(tds);
-    display.print(F("PH: ")); display.println(ph);
-    display.print(F("LL: ")); display.println(ll);
-    display.println(F("====================="));
+    display.print(F("TDS : ")); display.println(Sensors::tds);
+    display.print(F("PH  : ")); display.println(Sensors::ph);
+    display.print(F("LL  : ")); display.println(Sensors::ll);
   }
   
   if (PAGE == 1) {
@@ -599,15 +522,14 @@ double Sensors::getCurrentPH () {
   return PH_SLOPE * voltage + PH_OFFSET;
 }
 
-bool Sensors::isMainWaterLow () {
-  return goofy::goofyTDS <= TDS_NOTHING;
-}
-
 bool Sensors::isPlantWaterLow () {
   return digitalRead(LL_SENSOR_PIN) != LL_DETECTED;
 }
 
 void Sensors::init () {
+  pinMode(TDS_POWER_PIN, OUTPUT);
+  digitalWrite(TDS_POWER_PIN, HIGH);
+
   gravityTDS.setPin(TDS_SENSOR_PIN);
 
   gravityTDS.setAref(5.0);
@@ -617,103 +539,71 @@ void Sensors::init () {
 
   pinMode(PH_SENSOR_PIN, INPUT);
   pinMode(LL_SENSOR_PIN, INPUT);
-  
-  pinMode(TDS_POWER_PIN, OUTPUT);
-  digitalWrite(TDS_POWER_PIN, HIGH);
 }
 
-void Sensors::update () { gravityTDS.update(); }
+void Sensors::update () {
+  gravityTDS.update();
+
+  if (millis() - timer > SENSOR_DELAY || !timer) {
+    if (flipFlop) {
+      tds = getCurrentTDS(); 
+      digitalWrite(TDS_POWER_PIN, LOW);
+    }
+    else {
+      ph = getCurrentPH(); 
+      digitalWrite(TDS_POWER_PIN, HIGH);
+    }
+
+    timer = millis();
+    flipFlop = !flipFlop;
+  }
+
+  ll = isPlantWaterLow();
+}
 
 void Sensors::stop () {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Mixer::run (int speed, unsigned long time) {
-  startTime = millis();
-  stopTime = startTime + time;
+void Mixer::run () {
+  motor.setSpeed(MIXING_SPED);
+  motor.run(FORWARD);
 
-  currentSpeed = speed;
+  active = true;
 }
 
-bool Mixer::isActive () {
-  return millis() < stopTime; 
+bool Mixer::isActive () { 
+  return active; 
 }
 
-void Mixer::init () {
-  
-}
-
-void Mixer::update () {
-  if (millis() > stopTime) {
-    motor.setSpeed(MIXING_IDLE);
-    motor.run(FORWARD);
-    return;
-  }
-
-  if (millis() < startTime + 500) {
-    motor.setSpeed(MIXING_SLOW);
-    motor.run(FORWARD);
-    return;
-  }
-  if (millis() < startTime + 1000) {
-    motor.setSpeed(MIXING_SLOW + (MIXING_FAST - MIXING_SLOW) / 2);
-    motor.run(FORWARD);
-    return;
-  }
-
-  if (millis() < stopTime - 1000) {
-    motor.setSpeed(currentSpeed);
-    motor.run(FORWARD);
-    return;
-  }
-
-  if (millis() < stopTime - 500) {
-    motor.setSpeed(MIXING_SLOW + (MIXING_FAST - MIXING_SLOW) / 2);
-    motor.run(FORWARD);
-    return;
-  }
-  if (millis() < stopTime) {
-    motor.setSpeed(MIXING_SLOW);
-    motor.run(FORWARD);
-  }
-}
+void Mixer::init () {}
+void Mixer::update () {}
 
 void Mixer::stop () {
   motor.setSpeed(0);
   motor.run(RELEASE);
 
-  startTime = millis();
-  stopTime = millis();  
+  active = false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int Nutrients::calculate (double tds) {
-  //return (int)((TDS_TARGET - tds) / NUTRIENT_SLOPE / NUTRIENT_POCKET);
-  return 4;
-}
-
-void Nutrients::dispense (int amount) {
-  required = amount;
-  
+void Nutrients::dispense () {
   startTime = millis();
+  active = true;
 }
 
-bool Nutrients::isActive () {
-  return required > 0;
+bool Nutrients::isActive () { 
+  return active; 
 }
 
 void Nutrients::init () {
   servo.attach(NUTRIENT_SERVO_PIN);
+  servo.write(0);
 }
 
 void Nutrients::update () {
-  if (required <= 0) {
-    return;
-  }
-  
   if (millis() > startTime + NUTRIENT_IDLE_TIME) {
-    required -= 1;
     startTime = millis();
     flag = false;
     return;
@@ -721,69 +611,44 @@ void Nutrients::update () {
   
   if (millis() < startTime + NUTRIENT_FILL_TIME) {
     if (flag == false) {
-      servo.write(NUTRIENT_FILL_ANGLE);
-      flag = true;
+      servo.write(0); flag = true;
     }
     return;
   }
   if (millis() < startTime + NUTRIENT_DROP_TIME) {
     if (flag == true) {
-      servo.write(NUTRIENT_DROP_ANGLE);
-      flag = false;
+      servo.write(180); flag = false;
     }
     return;
   }
   if (millis() < startTime + NUTRIENT_IDLE_TIME) {
     if (flag == false) {
-      servo.write(NUTRIENT_FILL_ANGLE);
-      flag = true;
+      servo.write(0); flag = true;
     }
   }
-  
 }
 
-void Nutrients::stop () {
-  required = 0;
-}
+void Nutrients::stop () { active = false; }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double Ph::calculate (double ph) { 
-  //return ((PH_TARGET - ph) / PH_SLOPE_6);
-  return 20.0;
-}
-
-void Ph::dispense (double amount) {
-  startTime = millis();
-  
-  stopTime = millis() + (unsigned long)(1000 * amount / PH_FLOW_RATE);
-
+void Ph::dispense () {
   pump.setSpeed(255);  
   pump.run(FORWARD);
+
+  startTime = millis();
 }
 
-bool Ph::isActive () {
-  return millis() < stopTime;
+bool Ph::isActive () { 
+  return active; 
 }
 
-void Ph::init () {
-
-}
-
-void Ph::update () {
-  if (millis() >= stopTime) {
-    pump.setSpeed(0);
-    pump.run(RELEASE);
-  }
-}
+void Ph::init () {}
+void Ph::update () {}
 
 void Ph::stop () {
   pump.setSpeed(0);
   pump.run(RELEASE);
-
-
-  startTime = millis();
-  stopTime = millis();  
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -792,7 +657,9 @@ void Transfer::runPlant () {
   plantActive = true;
 
   plantPump.setSpeed(255);
-  plantPump.run(FORWARD);  
+  plantPump.run(FORWARD);
+
+  startTime = millis();  
 }
 
 void Transfer::runWaste () {
@@ -800,41 +667,41 @@ void Transfer::runWaste () {
 
   wastePump.setSpeed(255);
   wastePump.run(FORWARD);
+
+  wasteTimer = millis();
 }
 
-bool Transfer::isPlantActive () {
-  return plantActive;
+bool Transfer::isPlantActive () { 
+  return plantActive; 
 }
 
-bool Transfer::isWasteActive () {
-  return wasteActive;
+bool Transfer::isWasteActive () { 
+  return wasteActive; 
 }
 
-void Transfer::init () {
-
-}
+void Transfer::init () {}
 
 void Transfer::update () {
-  if (!Sensors::isPlantWaterLow()) {
+  if (!Sensors::isPlantWaterLow() && plantActive) {
     plantActive = false;
 
     plantPump.setSpeed(0);
     plantPump.run(RELEASE);
+
+    stopTime = millis();
   }
 
-  if (!Sensors::isMainWaterLow()) {
-    if (wasteFlag) {
-      wasteExtraTime = millis();
-      wasteFlag = false;
-    }
-    else if (millis() - wasteExtraTime >= 1000) {
-      wasteActive = false;
+  unsigned long time = (stopTime - startTime) * 3.2;
 
-      wastePump.setSpeed(0);
-      wastePump.run(RELEASE);
-      
-      wasteFlag = true;
-    }
+  if (millis() - wasteTimer > time && wasteActive) {
+    wasteActive = false;
+
+    wastePump.setSpeed(0);
+    wastePump.run(RELEASE);
+    
+    startTime = 0;
+    stopTime = 0;
+    wasteTimer = 0;
   }
 }
 
@@ -844,13 +711,14 @@ void Transfer::stop () {
     plantPump.setSpeed(0);
     plantPump.run(RELEASE);
 
-
     wasteActive = false;
 
     wastePump.setSpeed(0);
     wastePump.run(RELEASE);
-    
-    wasteFlag = true;
+
+    //startTime = 0;
+    stopTime = 0;
+    wasteTimer = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -19,11 +19,11 @@
 * Example: AF_DCMotor motor(1) for Motor/Pump connected to M1
 * Example: AF_DCMotor xpump(3) for Motor/Pump connected to M3
 */
-AF_DCMotor motor(1); 
+AF_DCMotor motor(4); 
 
 void setup() {
-  Serial.begin(9600);           // set up Serial library at 9600 bps -- **Ensure Serial Monitor also has baud rate set to 9600**
-  Serial.print("Starting motor.");
+  //Serial.begin(9600);           // set up Serial library at 9600 bps -- **Ensure Serial Monitor also has baud rate set to 9600**
+  //Serial.print("Starting motor.");
   motor.setSpeed(255);          // setSpeed() decides the speed at which the motor can run. This value can be between 0-255
   motor.run(FORWARD);           // run() decides the direction. This method also makes the motor move. So you need to call this fuction to get the motor started.
                                 // run() can take values: FORWARD, BACKWARD or RELEASE(to stop the motor)
